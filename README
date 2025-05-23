@@ -1,0 +1,85 @@
+BD
+-- Tabla de usuarios (admins, asesores, clientes)
+CREATE TABLE users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    phone VARCHAR(20),
+    rol ENUM('admin', 'asesor', 'cliente') NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    status ENUM('activo', 'inactivo') DEFAULT 'activo',
+    date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Tabla de servicios turísticos
+CREATE TABLE items (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    price DECIMAL(10,2) NOT NULL,
+    category VARCHAR(50),
+    type ENUM('product', 'service') DEFAULT 'service',
+    status ENUM('active', 'inactive') DEFAULT 'active',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+
+-- Tabla de cotizaciones
+CREATE TABLE quotations (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    client_id INT NOT NULL,
+    advisor_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    total DECIMAL(12,2),
+    personalized_message TEXT,
+    pdf_file VARCHAR(255),
+    email_sent BOOLEAN DEFAULT FALSE,
+    notes TEXT,
+    FOREIGN KEY (client_id) REFERENCES users(id) ON DELETE RESTRICT,
+    FOREIGN KEY (advisor_id) REFERENCES users(id) ON DELETE RESTRICT
+);
+
+
+-- Items de cada cotización
+CREATE TABLE quotation_items (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    quotation_id INT NOT NULL,
+    item_id INT NOT NULL,
+    quantity INT NOT NULL,
+    unit_price DECIMAL(10,2) NOT NULL,
+    subtotal DECIMAL(12,2) GENERATED ALWAYS AS (quantity * unit_price) STORED,
+    FOREIGN KEY (quotation_id) REFERENCES quotations(id) ON DELETE CASCADE,
+    FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE
+);
+
+
+
+-- Configuración general del sistema
+CREATE TABLE settings (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    company_name VARCHAR(255) NOT NULL,
+    company_phone VARCHAR(50),
+    company_address VARCHAR(255),
+    company_email VARCHAR(100),
+    logo_url TEXT,
+    quotation_message TEXT, -- Puedes guardar aquí HTML para texto enriquecido
+    business_hours JSON, -- Ideal para horarios de atención con estructura clara
+    signature_url TEXT,
+    company_nit VARCHAR(50),
+    manager_name VARCHAR(100),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+
+-- Logs de envío de cotizaciones por correo
+CREATE TABLE logs_envios (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    cotizacion_id INT NOT NULL,
+    email_destino VARCHAR(100),
+    fecha_envio TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    estado_envio ENUM('exitoso', 'fallido') DEFAULT 'exitoso',
+    mensaje TEXT,
+    FOREIGN KEY (cotizacion_id) REFERENCES cotizaciones(id) ON DELETE CASCADE
+);
